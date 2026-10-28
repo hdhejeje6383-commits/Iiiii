@@ -1,0 +1,2085 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>𝐁𝐋𝐎𝐎𝐃𝐘 𝐓𝐄𝐀𝐌 Admin</title>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    :root {
+      --bg: #080c14;
+      --card-bg: rgba(18, 25, 41, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --accent: #3b82f6;
+      --accent-glow: rgba(59, 130, 246, 0.35);
+      --text: #f8fafc;
+      --text-dim: #94a3b8;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --success: #10b981;
+      --purple: #a855f7;
+      --cyan: #06b6d4;
+      --pink: #ec4899;
+      --red: #f43f5e;
+      --orange: #ff5500;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 95px;
+      overflow-x: hidden;
+    }
+
+    /* Top Bar */
+    .top-bar {
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--card-border);
+      backdrop-filter: blur(12px);
+      background: rgba(8, 12, 20, 0.85);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .brand-title {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      color: #fff;
+      text-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+    }
+
+    /* পেজ সুইচ স্মুথ ট্রানজিশন অ্যানিমেশন */
+    .page-section {
+      display: none;
+      padding: 20px;
+      max-width: 1300px;
+      margin: 0 auto;
+      opacity: 0;
+      transform: translateX(18px);
+      transition: opacity 0.28s cubic-bezier(0.4, 0, 0.2, 1), transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .page-section.active {
+      display: block;
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 25px;
+    }
+
+    .stat-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(12px);
+      border-radius: 14px;
+      padding: 18px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .stat-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .stat-info h4 {
+      font-size: 13px;
+      color: var(--text-dim);
+      font-weight: 500;
+    }
+
+    .stat-info p {
+      font-size: 24px;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+
+    .panel-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(12px);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .horizontal-scroll-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      overflow-x: auto;
+      white-space: nowrap;
+      padding-bottom: 8px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--accent) transparent;
+    }
+
+    .horizontal-scroll-container::-webkit-scrollbar {
+      height: 4px;
+    }
+    .horizontal-scroll-container::-webkit-scrollbar-thumb {
+      background: rgba(59, 130, 246, 0.4);
+      border-radius: 4px;
+    }
+
+    .filter-chip {
+      padding: 9px 18px;
+      border-radius: 30px;
+      font-size: 13px;
+      border: 1px solid var(--card-border);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-dim);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+      transition: all 0.2s ease;
+    }
+
+    .filter-chip.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 14px var(--accent-glow);
+    }
+
+    .keys-grid, .updates-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 20px;
+    }
+
+    .item-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(14px);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all 0.25s ease;
+      position: relative;
+    }
+
+    .item-card:hover {
+      border-color: rgba(59, 130, 246, 0.4);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+
+    .card-header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 14px;
+      gap: 10px;
+    }
+
+    .cred-tag {
+      font-size: 11px;
+      padding: 3px 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 6px;
+      color: var(--text-dim);
+      font-family: monospace;
+    }
+
+    .cred-tag b {
+      color: var(--text);
+    }
+
+    .status-badge {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+      text-transform: uppercase;
+    }
+    .status-active { background: rgba(16, 185, 129, 0.15); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.3); }
+    .status-frozen { background: rgba(245, 158, 11, 0.15); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.3); }
+    .status-pending { background: rgba(148, 163, 184, 0.15); color: var(--text-dim); border: 1px solid rgba(148, 163, 184, 0.3); }
+
+    .info-details-box {
+      background: rgba(0, 0, 0, 0.25);
+      border-radius: 10px;
+      padding: 12px;
+      margin: 12px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-size: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.03);
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .info-row span {
+      color: var(--text-dim);
+    }
+
+    .info-row strong {
+      color: var(--text);
+      font-weight: 500;
+      word-break: break-all;
+    }
+
+    .countdown-container {
+      background: rgba(59, 130, 246, 0.08);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      border-radius: 10px;
+      padding: 10px;
+      text-align: center;
+      margin-bottom: 14px;
+    }
+
+    .countdown-title {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-bottom: 3px;
+      text-transform: uppercase;
+    }
+
+    .countdown-timer {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      font-family: monospace;
+    }
+
+    .countdown-timer.expired {
+      color: var(--danger);
+    }
+
+    .card-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .btn-labeled {
+      flex: 1 1 calc(50% - 6px);
+      padding: 9px 8px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .btn-labeled:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-labeled.btn-copy { background: #1e293b; color: #fff; border-color: #334155; }
+    .btn-labeled.btn-freeze { background: rgba(245, 158, 11, 0.15); color: var(--warning); border-color: rgba(245, 158, 11, 0.3); }
+    .btn-labeled.btn-reset { background: rgba(59, 130, 246, 0.15); color: var(--accent); border-color: rgba(59, 130, 246, 0.3); }
+    .btn-labeled.btn-del { background: rgba(239, 68, 68, 0.15); color: var(--danger); border-color: rgba(239, 68, 68, 0.3); }
+    .btn-labeled.btn-logs { background: rgba(168, 85, 247, 0.15); color: var(--purple); border-color: rgba(168, 85, 247, 0.3); flex: 1 1 100%; }
+
+    /* Modals & Forms */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(10px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 16px;
+    }
+
+    .modal-overlay.active { display: flex; }
+
+    .modal-content {
+      background: rgba(19, 27, 46, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(18px);
+      border-radius: 20px;
+      width: 100%;
+      max-width: 520px;
+      padding: 24px;
+      position: relative;
+      animation: modalZoom 0.22s ease;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    @keyframes modalZoom {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    .form-group { margin-bottom: 14px; }
+    .form-group label {
+      display: block;
+      font-size: 11.5px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    .input-row { display: flex; gap: 10px; }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 11px 14px;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      background: rgba(11, 17, 32, 0.85);
+      color: var(--text);
+      outline: none;
+      font-size: 13px;
+    }
+
+    textarea { resize: vertical; min-height: 70px; }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+
+    .btn-primary {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .btn-secondary {
+      padding: 0 16px;
+      border-radius: 8px;
+      border: none;
+      background: #334155;
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    /* ফটোতে থাকা কাস্টম ডিভাইডার */
+    .dotted-divider {
+      border: none;
+      border-top: 2px dashed rgba(255, 255, 255, 0.2);
+      margin: 18px 0;
+    }
+
+    .btn-white-deploy {
+      background: #ffffff !important;
+      color: #000000 !important;
+      font-weight: 700 !important;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { padding: 10px; border-bottom: 1px solid var(--card-border); text-align: left; }
+    th { color: var(--text-dim); background: rgba(255, 255, 255, 0.02); }
+
+    .toast-box {
+      position: fixed;
+      bottom: 85px;
+      left: 50%;
+      transform: translateX(-50%) translateY(30px);
+      background: rgba(30, 41, 59, 0.9);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--accent);
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 30px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s ease;
+      z-index: 200;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    }
+
+    .toast-box.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 72px;
+      background: rgba(14, 20, 36, 0.9);
+      backdrop-filter: blur(14px);
+      border-top: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 50;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      color: var(--text-dim);
+      font-size: 11px;
+      cursor: pointer;
+      border: none;
+      background: none;
+      transition: all 0.2s ease;
+    }
+
+    .nav-item i { font-size: 18px; }
+    .nav-item.active { color: var(--accent); }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="brand-title">𝐁𝐋𝐎𝐎𝐃𝐘 𝐓𝐄𝐀𝐌</div>
+    <span class="status-badge status-active">
+      <i class="fa-solid fa-bolt"></i> Live Connected
+    </span>
+  </div>
+
+  <!-- TAB 1: DASHBOARD -->
+  <section id="page-dashboard" class="page-section active">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(59, 130, 246, 0.15); color: var(--accent);">
+          <i class="fa-solid fa-key"></i>
+        </div>
+        <div class="stat-info">
+          <h4>Total License Keys</h4>
+          <p id="totalKeys">0</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(168, 85, 247, 0.15); color: var(--purple);">
+          <i class="fa-solid fa-users"></i>
+        </div>
+        <div class="stat-info">
+          <h4>Unlimited Keys</h4>
+          <p id="totalUnlimitedKeys">0</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--success);">
+          <i class="fa-solid fa-mobile-screen"></i>
+        </div>
+        <div class="stat-info">
+          <h4>Single Device Keys</h4>
+          <p id="totalSingleKeys">0</p>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(255, 85, 0, 0.15); color: var(--orange);">
+          <i class="fa-solid fa-sliders"></i>
+        </div>
+        <div class="stat-info">
+          <h4>Floating Mod Features</h4>
+          <p id="totalModFeaturesCount">0</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel-card" style="text-align: center; padding: 45px 20px;">
+      <i class="fa-solid fa-shield-halved" style="font-size: 46px; color: var(--accent); margin-bottom: 14px;"></i>
+      <h3 style="font-size: 18px; margin-bottom: 6px;">System Control Core</h3>
+      <p style="color: var(--text-dim); font-size: 13px; max-width: 520px; margin: 0 auto;">
+        Realtime Key Management, Mod Injection Actions, Floating Overlay & UI Controls are live and active.
+      </p>
+    </div>
+  </section>
+
+  <!-- TAB 2: FUNCTIONS -->
+  <section id="page-functions" class="page-section">
+    <div class="panel-card">
+      <h3><i class="fa-solid fa-sliders"></i> Function Management</h3>
+      <p style="color: var(--text-dim); font-size: 13px; margin-top: 4px;">Click any card to launch that controller pop-up.</p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+      <!-- Key Management -->
+      <div class="stat-card" style="cursor: pointer;" onclick="openModal('keyGenModal')">
+        <div class="stat-icon" style="background: rgba(59, 130, 246, 0.15); color: var(--accent);">
+          <i class="fa-solid fa-key"></i>
+        </div>
+        <div>
+          <h4>Key Management</h4>
+          <small style="color: var(--text-dim);">Generate Custom/Auto HWID Keys with Validity</small>
+        </div>
+      </div>
+
+      <!-- Floating Mod Actions & Buttons Manager (আপনার স্ক্রিনশটের ফিচার) -->
+      <div class="stat-card" style="cursor: pointer;" onclick="openModActionModal()">
+        <div class="stat-icon" style="background: rgba(255, 85, 0, 0.15); color: var(--orange);">
+          <i class="fa-solid fa-gamepad"></i>
+        </div>
+        <div>
+          <h4>Floating Mod Actions Manager</h4>
+          <small style="color: var(--text-dim);">Deploy Injection Features (Single / Dual ZIP)</small>
+        </div>
+      </div>
+
+      <!-- Floating Mod Window Config (Title & Logo) -->
+      <div class="stat-card" style="cursor: pointer;" onclick="openFloatingModal()">
+        <div class="stat-icon" style="background: rgba(168, 85, 247, 0.15); color: var(--purple);">
+          <i class="fa-solid fa-compass"></i>
+        </div>
+        <div>
+          <h4>Floating Window UI Config</h4>
+          <small style="color: var(--text-dim);">Change Floating Window Title & Logo URL</small>
+        </div>
+      </div>
+
+      <!-- Forceful Update -->
+      <div class="stat-card" style="cursor: pointer;" onclick="openUpdateModal()">
+        <div class="stat-icon" style="background: rgba(245, 158, 11, 0.15); color: var(--warning);">
+          <i class="fa-solid fa-cloud-arrow-up"></i>
+        </div>
+        <div>
+          <h4>Forceful Update Controller</h4>
+          <small style="color: var(--text-dim);">Push App Updates, Versions, Title, Notes & Link</small>
+        </div>
+      </div>
+
+      <!-- Notification -->
+      <div class="stat-card" style="cursor: pointer;" onclick="openNotifModal()">
+        <div class="stat-icon" style="background: rgba(6, 182, 212, 0.15); color: var(--cyan);">
+          <i class="fa-solid fa-bell"></i>
+        </div>
+        <div>
+          <h4>Push Notification Controller</h4>
+          <small style="color: var(--text-dim);">Broadcast In-App Alerts, Announcements & News</small>
+        </div>
+      </div>
+
+      <!-- App Branding -->
+      <div class="stat-card" style="cursor: pointer;" onclick="openBrandingModal()">
+        <div class="stat-icon" style="background: rgba(236, 72, 153, 0.15); color: var(--pink);">
+          <i class="fa-solid fa-palette"></i>
+        </div>
+        <div>
+          <h4>App Branding Customizer</h4>
+          <small style="color: var(--text-dim);">Update imageview1 Logo URL & textview1 App Name</small>
+        </div>
+      </div>
+
+      <!-- Link Redirect -->
+      <div class="stat-card" style="cursor: pointer;" onclick="openRedirectModal()">
+        <div class="stat-icon" style="background: rgba(244, 63, 94, 0.15); color: var(--red);">
+          <i class="fa-solid fa-arrow-up-right-from-square"></i>
+        </div>
+        <div>
+          <h4>Auto Link / Video Redirect</h4>
+          <small style="color: var(--text-dim);">Auto-open YouTube, Telegram, or Web Links on App Start</small>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB 3: KEY DATA -->
+  <section id="page-keydata" class="page-section">
+    <div class="horizontal-scroll-container" style="margin-bottom: 20px;">
+      <button class="filter-chip active" onclick="applyKeyFilter('all', this)">
+        <i class="fa-solid fa-list"></i> All Keys
+      </button>
+      <button class="filter-chip" onclick="applyKeyFilter('single', this)">
+        <i class="fa-solid fa-mobile-screen"></i> Single Device Keys
+      </button>
+      <button class="filter-chip" onclick="applyKeyFilter('unlimited', this)">
+        <i class="fa-solid fa-users"></i> Unlimited Device Keys
+      </button>
+    </div>
+
+    <div class="keys-grid" id="keysGridContainer"></div>
+  </section>
+
+  <!-- TAB 4: FUNCTION DATA -->
+  <section id="page-updatedata" class="page-section">
+    <div class="horizontal-scroll-container" style="margin-bottom: 24px;">
+      <button class="filter-chip active" id="chip-func-all" onclick="applyFunctionFilter('all', this)">
+        <i class="fa-solid fa-layer-group"></i> All Functions Data
+      </button>
+      <button class="filter-chip" id="chip-func-buttons" onclick="applyFunctionFilter('mod_buttons', this)">
+        <i class="fa-solid fa-gamepad"></i> Mod Actions (<span id="countModButtonsChip">0</span>)
+      </button>
+      <button class="filter-chip" id="chip-func-floating" onclick="applyFunctionFilter('floating', this)">
+        <i class="fa-solid fa-compass"></i> Overlay Config (<span id="countFloatingChip">0</span>)
+      </button>
+      <button class="filter-chip" id="chip-func-branding" onclick="applyFunctionFilter('branding', this)">
+        <i class="fa-solid fa-palette"></i> Branding UI (<span id="countBrandingChip">0</span>)
+      </button>
+      <button class="filter-chip" id="chip-func-updates" onclick="applyFunctionFilter('updates', this)">
+        <i class="fa-solid fa-cloud-arrow-up"></i> App Updates (<span id="countUpdatesChip">0</span>)
+      </button>
+      <button class="filter-chip" id="chip-func-notifs" onclick="applyFunctionFilter('notifications', this)">
+        <i class="fa-solid fa-bell"></i> Notifications (<span id="countNotifsChip">0</span>)
+      </button>
+      <button class="filter-chip" id="chip-func-redirects" onclick="applyFunctionFilter('redirects', this)">
+        <i class="fa-solid fa-link"></i> Link Redirects (<span id="countRedirectsChip">0</span>)
+      </button>
+    </div>
+
+    <div class="updates-grid" id="updatesGridContainer"></div>
+  </section>
+
+  <!-- MODALS -->
+
+  <!-- 1. FLOATING MOD ACTIONS & BUTTONS MANAGER MODAL (হুবহু স্ক্রিনশটের ফিল্ডগুলো) -->
+  <div class="modal-overlay" id="modActionModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <h3 style="font-size: 15px; text-transform: uppercase; letter-spacing: 0.5px;">Floating Mod Actions & Buttons Manager</h3>
+          <small style="color: var(--text-dim); font-size: 11px;">Configure dynamic injection buttons, file download targets, and extract directories.</small>
+        </div>
+        <button class="close-btn" onclick="closeModal('modActionModal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <input type="hidden" id="editModActionId" value="">
+
+      <!-- UPLOAD FILE MODE -->
+      <div class="form-group">
+        <label>Upload File Mode</label>
+        <select id="modFileMode" onchange="toggleDualModeFields()">
+          <option value="single">Single File Mode (Single ZIP)</option>
+          <option value="dual">Dual File Mode (Double ZIP)</option>
+        </select>
+      </div>
+
+      <!-- BUTTON DISPLAY NAME -->
+      <div class="form-group">
+        <label>Button Display Name</label>
+        <input type="text" id="modButtonName" placeholder="e.g. Headshot 100%">
+      </div>
+
+      <!-- PRIMARY ZIP URL -->
+      <div class="form-group">
+        <label>Primary ZIP URL (Direct / GitHub Raw)</label>
+        <input type="url" id="modZipUrl" placeholder="https://github.com/.../files.zip">
+      </div>
+
+      <!-- PRIMARY EXTRACT DESTINATION PATH -->
+      <div class="form-group">
+        <label>Primary Extract Destination Path</label>
+        <input type="text" id="modExtractPath" placeholder="/storage/emulated/0/Android/data/...">
+      </div>
+
+      <!-- DELETE PATHS (OPTIONAL) -->
+      <div class="form-group">
+        <label>Delete Paths (Optional / Comma or Newline Separated)</label>
+        <textarea id="modDeletePaths" placeholder="/storage/emulated/0/Android/data/com.dts.freefireth/files/game_asset_bundle"></textarea>
+      </div>
+
+      <!-- DUAL MODE SECONDARY FIELDS (ফটো ২ অনুযায়ী) -->
+      <div id="dualModeFields" style="display: none;">
+        <hr class="dotted-divider">
+        <div class="form-group">
+          <label>Secondary ZIP URL (2nd File)</label>
+          <input type="url" id="modSecZipUrl" placeholder="https://github.com/.../second.zip">
+        </div>
+        <div class="form-group">
+          <label>Secondary Extract Destination Path</label>
+          <input type="text" id="modSecExtractPath" placeholder="/storage/emulated/0/Android/obb/...">
+        </div>
+      </div>
+
+      <!-- BUTTONS -->
+      <div style="display: flex; gap: 10px; margin-top: 15px;">
+        <button class="btn-primary btn-white-deploy" style="flex: 2;" onclick="saveModActionButton()">
+          <i class="fa-solid fa-cloud-arrow-up"></i> Save & Deploy Button
+        </button>
+        <button class="btn-secondary" style="flex: 1;" onclick="clearModActionForm()">
+          Clear
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. FLOATING OVERLAY CONFIG MODAL -->
+  <div class="modal-overlay" id="floatingConfigModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 style="font-size: 16px;"><i class="fa-solid fa-compass" style="color: var(--orange);"></i> Floating Mod Window Config</h3>
+        <button class="close-btn" onclick="closeModal('floatingConfigModal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="form-group">
+        <label>Floating Window Title (titleTag)</label>
+        <input type="text" id="floatTitle" placeholder="e.g. 𝐁𝐋𝐎𝐎𝐃𝐘 𝐓𝐄𝐀𝐌 V5">
+      </div>
+      <div class="form-group">
+        <label>Floating Radar Logo URL (iconView)</label>
+        <input type="url" id="floatLogoUrl" placeholder="https://example.com/logo.png">
+      </div>
+      <button class="btn-primary" style="background: var(--orange);" onclick="saveFloatingConfig()">
+        <i class="fa-solid fa-check"></i> Save & Update Overlay
+      </button>
+    </div>
+  </div>
+
+  <!-- 3. KEY GENERATOR MODAL -->
+  <div class="modal-overlay" id="keyGenModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 style="font-size: 16px;"><i class="fa-solid fa-plus-circle" style="color: var(--accent);"></i> Generate License Key</h3>
+        <button class="close-btn" onclick="closeModal('keyGenModal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="form-group">
+        <label>Username / License Key</label>
+        <div class="input-row">
+          <input type="text" id="modalUsername" placeholder="Enter username or generate">
+          <button class="btn-secondary" onclick="generateAutoKey()"><i class="fa-solid fa-wand-magic-sparkles"></i> Auto</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Access Password</label>
+        <input type="text" id="modalPassword" placeholder="Enter access password">
+      </div>
+      <div class="form-group">
+        <label>Device Restriction Type</label>
+        <select id="modalDeviceLimit">
+          <option value="single">Single Device (Strict 1 HWID Lock)</option>
+          <option value="unlimited">Unlimited Devices (Multiple Device Support)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Validity Duration</label>
+        <div class="input-row">
+          <input type="number" id="modalDurationValue" placeholder="Duration" value="1">
+          <select id="modalDurationUnit" onchange="checkPermanent(this)">
+            <option value="seconds">Seconds</option>
+            <option value="minutes">Minutes</option>
+            <option value="hours">Hours</option>
+            <option value="days">Days</option>
+            <option value="months">Months</option>
+            <option value="permanent">Permanent (Lifetime)</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="submitNewKey()"><i class="fa-solid fa-check"></i> Generate License</button>
+    </div>
+  </div>
+
+  <!-- 4. UPDATE MODAL -->
+  <div class="modal-overlay" id="updateConfigModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 style="font-size: 16px;" id="updateModalHeading"><i class="fa-solid fa-cloud-arrow-up" style="color: var(--warning);"></i> Forceful Update Config</h3>
+        <button class="close-btn" onclick="closeModal('updateConfigModal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <input type="hidden" id="editUpdateKeyId" value="">
+      <div class="form-group">
+        <label>Update Dialog Title</label>
+        <input type="text" id="updateTitle" placeholder="e.g. Critical Update Available!">
+      </div>
+      <div class="form-group">
+        <label>Update Version (e.g. v2.5.0)</label>
+        <input type="text" id="updateVersion" placeholder="e.g. v2.5.0">
+      </div>
+      <div class="form-group">
+        <label>Changelog / Update Text Message</label>
+        <textarea id="updateMessage" placeholder="Describe update notes..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Direct Download / Redirect Link</label>
+        <input type="url" id="updateDownloadUrl" placeholder="https://t.me/channel or Direct APK link">
+      </div>
+      <div class="form-group">
+        <label>Force Update Behavior</label>
+        <select id="updateForceState">
+          <option value="active">Active (User MUST update to enter)</option>
+          <option value="frozen">Frozen / Disabled (Update ignored)</option>
+        </select>
+      </div>
+      <button class="btn-primary" id="saveUpdateBtn" onclick="saveUpdateConfig()"><i class="fa-solid fa-cloud-arrow-up"></i> Broadcast Update</button>
+    </div>
+  </div>
+
+  <!-- 5. NOTIFICATION MODAL -->
+  <div class="modal-overlay" id="notifConfigModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 style="font-size: 16px;" id="notifModalHeading"><i class="fa-solid fa-bell" style="color: var(--cyan);"></i> Push Notification Config</h3>
+        <button class="close-btn" onclick="closeModal('notifConfigModal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <input type="hidden" id="editNotifKeyId" value="">
+      <div class="form-group">
+        <label>Notification Title</label>
+        <input type="text" id="notifTitle" placeholder="e.g. Important Notice!">
+      </div>
+      <div class="form-group">
+        <label>Notification Description / Message</label>
+        <textarea id="notifMessage" placeholder="Enter message body..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Notification Status</label>
+        <select id="notifState">
+          <option value="active">Active (Shown inside client app)</option>
+          <option value="frozen">Frozen / Disabled (Hidden)</option>
+        </select>
+      </div>
+      <button class="btn-primary" id="saveNotifBtn" style="background: var(--cyan);" onclick="saveNotifConfig()">
+        <i class="fa-solid fa-paper-plane"></i> Send Notification
+      </button>
+    </div>
+  </div>
+
+  <!-- 6. BRANDING MODAL -->
+  <div class="modal-overlay" id="brandingConfigModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 style="font-size: 16px;" id="brandingModalHeading"><i class="fa-solid fa-palette" style="color: var(--pink);"></i> App UI Branding Config</h3>
+        <button class="close-btn" onclick="closeModal('brandingConfigModal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <input type="hidden" id="editBrandingKeyId" value="">
+      <div class="form-group">
+        <label>App Name (Sets `textview1` text)</label>
+        <input type="text" id="brandingAppName" placeholder="e.g. 𝐁𝐋𝐎𝐎𝐃𝐘 𝐓𝐄𝐀𝐌 VIP">
+      </div>
+      <div class="form-group">
+        <label>App Logo URL (Sets `imageview1` image)</label>
+        <input type="url" id="brandingLogoUrl" placeholder="https://example.com/logo.png">
+      </div>
+      <div class="form-group">
+        <label>Branding Status</label>
+        <select id="brandingState">
+          <option value="active">Active (App will use this Name & Logo)</option>
+          <option value="frozen">Frozen / Disabled (Default UI)</option>
+        </select>
+      </div>
+      <button class="btn-primary" id="saveBrandingBtn" style="background: var(--pink);" onclick="saveBrandingConfig()">
+        <i class="fa-solid fa-check"></i> Apply Branding
+      </button>
+    </div>
+  </div>
+
+  <!-- 7. REDIRECT MODAL -->
+  <div class="modal-overlay" id="redirectConfigModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 style="font-size: 16px;" id="redirectModalHeading"><i class="fa-solid fa-link" style="color: var(--red);"></i> Auto Link Redirect Config</h3>
+        <button class="close-btn" onclick="closeModal('redirectConfigModal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <input type="hidden" id="editRedirectKeyId" value="">
+      <div class="form-group">
+        <label>Redirect Title / Name</label>
+        <input type="text" id="redirectTitle" placeholder="e.g. YouTube Video, Telegram Channel">
+      </div>
+      <div class="form-group">
+        <label>Target URL (YouTube / Telegram / Web)</label>
+        <input type="url" id="redirectTargetUrl" placeholder="https://youtube.com/... or https://t.me/...">
+      </div>
+      <div class="form-group">
+        <label>Redirect Status</label>
+        <select id="redirectState">
+          <option value="active">Active (Redirects immediately on App start)</option>
+          <option value="frozen">Frozen / Disabled (Do not redirect)</option>
+        </select>
+      </div>
+      <button class="btn-primary" id="saveRedirectBtn" style="background: var(--red);" onclick="saveRedirectConfig()">
+        <i class="fa-solid fa-bolt"></i> Save & Activate Link
+      </button>
+    </div>
+  </div>
+
+  <!-- 8. DEVICE LOGS MODAL -->
+  <div class="modal-overlay" id="deviceLogModal">
+    <div class="modal-content" style="max-width: 650px;">
+      <div class="modal-header">
+        <h3 style="font-size: 16px;"><i class="fa-solid fa-users" style="color: var(--accent);"></i> Connected Devices Log</h3>
+        <button class="close-btn" onclick="closeModal('deviceLogModal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <p id="logModalSubtitle" style="color: var(--text-dim); font-size: 13px; margin-bottom: 15px;"></p>
+      <div style="max-height: 340px; overflow-y: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Device Model</th>
+              <th>Android Ver</th>
+              <th>HWID</th>
+              <th>Build ID</th>
+            </tr>
+          </thead>
+          <tbody id="deviceLogTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 9. CONFIRM MODAL -->
+  <div class="modal-overlay" id="confirmModal">
+    <div class="modal-content" style="max-width: 420px; text-align: center;">
+      <div style="font-size: 40px; color: var(--warning); margin-bottom: 12px;">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <h3 id="confirmTitle" style="font-size: 17px; margin-bottom: 8px;">Are you sure?</h3>
+      <p id="confirmMessage" style="color: var(--text-dim); font-size: 13px; margin-bottom: 20px;"></p>
+      <div style="display: flex; gap: 10px;">
+        <button class="btn-secondary" style="flex:1; padding: 10px;" onclick="closeConfirmModal()">Cancel</button>
+        <button id="confirmExecuteBtn" class="btn-primary" style="flex:1; padding: 10px; margin: 0; background: var(--danger);">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast-box">
+    <i class="fa-solid fa-circle-check" style="color: var(--success);"></i>
+    <span id="toastMsg">Action completed</span>
+  </div>
+
+  <!-- BOTTOM NAVIGATION -->
+  <div class="bottom-nav">
+    <button class="nav-item active" onclick="switchPage('dashboard', this)">
+      <i class="fa-solid fa-chart-pie"></i>
+      <span>Dashboard</span>
+    </button>
+    <button class="nav-item" onclick="switchPage('functions', this)">
+      <i class="fa-solid fa-layer-group"></i>
+      <span>Functions</span>
+    </button>
+    <button class="nav-item" id="nav-keydata" onclick="switchPage('keydata', this)">
+      <i class="fa-solid fa-database"></i>
+      <span>Key Data</span>
+    </button>
+    <button class="nav-item" id="nav-updatedata" onclick="switchPage('updatedata', this)">
+      <i class="fa-solid fa-server"></i>
+      <span>Function Data</span>
+    </button>
+  </div>
+
+  <script>
+    // 1. Firebase Initialization[span_16](start_span)[span_16](end_span)
+    const firebaseConfig = {
+      databaseURL: "https://tttttt-a60f0-default-rtdb.firebaseio.com",
+      projectId: "tttttt-a60f0"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const dbUsers = firebase.database().ref("users");
+    const dbUpdates = firebase.database().ref("app_updates");
+    const dbNotifs = firebase.database().ref("app_notifications");
+    const dbBranding = firebase.database().ref("app_branding");
+    const dbRedirects = firebase.database().ref("app_redirect");
+    const dbFloatingConfig = firebase.database().ref("floating_config");
+    const dbFloatingButtons = firebase.database().ref("floating_buttons"); // Floating Mod Actions[span_17](start_span)[span_17](end_span)
+
+    let rawUsersData = {};
+    let rawUpdatesData = {};
+    let rawNotifsData = {};
+    let rawBrandingData = {};
+    let rawRedirectsData = {};
+    let rawFloatingConfig = {};
+    let rawFloatingButtons = {};
+
+    let currentKeyFilter = 'all';
+    let currentFunctionFilter = 'all';
+
+    // 2. Click Sound Audio Synthesis (Web Audio API)
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playClickSound() {
+      try {
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.04);
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.04);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.04);
+      } catch (e) {}
+    }
+
+    // গ্লোবাল ক্লিক লিসেনার
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('button') || e.target.closest('.stat-card') || e.target.closest('.filter-chip')) {
+        playClickSound();
+      }
+    });
+
+    function showToast(msg) {
+      const toast = document.getElementById("toast");
+      document.getElementById("toastMsg").innerText = msg;
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 2500);
+    }
+
+    function showCustomConfirm(title, message, onConfirm, isDanger = true) {
+      const modal = document.getElementById("confirmModal");
+      document.getElementById("confirmTitle").innerText = title;
+      document.getElementById("confirmMessage").innerText = message;
+      const confirmBtn = document.getElementById("confirmExecuteBtn");
+      confirmBtn.style.background = isDanger ? "var(--danger)" : "var(--accent)";
+      confirmBtn.onclick = () => {
+        closeConfirmModal();
+        onConfirm();
+      };
+      modal.classList.add("active");
+    }
+
+    function closeConfirmModal() {
+      document.getElementById("confirmModal").classList.remove("active");
+    }
+
+    // 3. Smooth Page Switching Animation
+    function switchPage(pageName, element) {
+      document.querySelectorAll('.page-section').forEach(p => {
+        p.classList.remove('active');
+      });
+      document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+
+      setTimeout(() => {
+        if (pageName === 'dashboard') document.getElementById('page-dashboard').classList.add('active');
+        else if (pageName === 'functions') document.getElementById('page-functions').classList.add('active');
+        else if (pageName === 'keydata') document.getElementById('page-keydata').classList.add('active');
+        else if (pageName === 'updatedata') document.getElementById('page-updatedata').classList.add('active');
+      }, 50);
+
+      if (element) element.classList.add('active');
+    }
+
+    function openModal(id) { document.getElementById(id).classList.add('active'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+    function checkPermanent(select) {
+      const valInput = document.getElementById("modalDurationValue");
+      if (select.value === "permanent") {
+        valInput.value = "";
+        valInput.disabled = true;
+      } else {
+        valInput.disabled = false;
+        if (!valInput.value) valInput.value = "1";
+      }
+    }
+
+    function generateAutoKey() {
+      const randKey = "MOD-" + Math.random().toString(36).substring(2, 8).toUpperCase();
+      const randPass = Math.floor(100000 + Math.random() * 900000);
+      document.getElementById("modalUsername").value = randKey;
+      document.getElementById("modalPassword").value = randPass;
+    }
+
+    // 4. FLOATING MOD ACTIONS & BUTTONS LOGIC (স্ক্রিনশটের হুবহু লজিক)[span_18](start_span)[span_18](end_span)[span_19](start_span)[span_19](end_span)[span_20](start_span)[span_20](end_span)
+    function toggleDualModeFields() {
+      const mode = document.getElementById("modFileMode").value;
+      const dualSec = document.getElementById("dualModeFields");
+      if (mode === "dual") {
+        dualSec.style.display = "block";
+      } else {
+        dualSec.style.display = "none";
+      }
+    }
+
+    function openModActionModal(editId = null) {
+      if (editId && rawFloatingButtons[editId]) {
+        const item = rawFloatingButtons[editId];
+        document.getElementById("editModActionId").value = editId;
+        document.getElementById("modFileMode").value = item.fileMode || "single";
+        document.getElementById("modButtonName").value = item.name || "";
+        document.getElementById("modZipUrl").value = item.zipUrl || "";
+        document.getElementById("modExtractPath").value = item.extractPath || "";
+        document.getElementById("modDeletePaths").value = item.deletePaths || "";
+        document.getElementById("modSecZipUrl").value = item.secZipUrl || "";
+        document.getElementById("modSecExtractPath").value = item.secExtractPath || "";
+      } else {
+        clearModActionForm();
+      }
+      toggleDualModeFields();
+      openModal('modActionModal');
+    }
+
+    function clearModActionForm() {
+      document.getElementById("editModActionId").value = "";
+      document.getElementById("modFileMode").value = "single";
+      document.getElementById("modButtonName").value = "";
+      document.getElementById("modZipUrl").value = "";
+      document.getElementById("modExtractPath").value = "";
+      document.getElementById("modDeletePaths").value = "";
+      document.getElementById("modSecZipUrl").value = "";
+      document.getElementById("modSecExtractPath").value = "";
+      toggleDualModeFields();
+    }
+
+    function saveModActionButton() {
+      const editId = document.getElementById("editModActionId").value;
+      const fileMode = document.getElementById("modFileMode").value;
+      const name = document.getElementById("modButtonName").value.trim();
+      const zipUrl = document.getElementById("modZipUrl").value.trim();
+      const extractPath = document.getElementById("modExtractPath").value.trim();
+      const deletePaths = document.getElementById("modDeletePaths").value.trim();
+      const secZipUrl = document.getElementById("modSecZipUrl").value.trim();
+      const secExtractPath = document.getElementById("modSecExtractPath").value.trim();
+
+      if (!name || !zipUrl || !extractPath) {
+        return showToast("Button Name, Primary ZIP URL & Extract Path are required!");
+      }
+
+      if (fileMode === "dual" && (!secZipUrl || !secExtractPath)) {
+        return showToast("Secondary ZIP URL & Extract Path are required for Dual Mode!");
+      }
+
+      const btnId = editId ? editId : ("BTN-" + Date.now().toString(36).toUpperCase());
+      const payload = {
+        name: name,
+        fileMode: fileMode,
+        zipUrl: zipUrl,
+        extractPath: extractPath,
+        deletePaths: deletePaths,
+        secZipUrl: fileMode === "dual" ? secZipUrl : "",
+        secExtractPath: fileMode === "dual" ? secExtractPath : "",
+        updated_at: new Date().toLocaleString()
+      };
+
+      dbFloatingButtons.child(btnId).update(payload).then(() => {
+        showToast(editId ? "Mod Action Button Modified!" : "Mod Action Deployed to Floating Menu!");
+        closeModal('modActionModal');
+        clearModActionForm();
+      }).catch(err => showToast("Error: " + err.message));
+    }
+
+    function deleteModActionButton(btnId) {
+      showCustomConfirm("Delete Mod Feature Button?", "This switch will disappear from users' floating overlay immediately.", () => {
+        dbFloatingButtons.child(btnId).remove().then(() => showToast("Mod Action deleted!"));
+      }, true);
+    }
+
+    // 5. Submit License Key
+    function submitNewKey() {
+      const user = document.getElementById("modalUsername").value.trim();
+      const pass = document.getElementById("modalPassword").value.trim();
+      const deviceLimit = document.getElementById("modalDeviceLimit").value;
+      const durationUnit = document.getElementById("modalDurationUnit").value;
+      const durationVal = parseInt(document.getElementById("modalDurationValue").value) || 0;
+
+      if (!user || !pass) return showToast("Provide username and password!");
+
+      let expiryTime = "permanent";
+      const now = Date.now();
+
+      if (durationUnit !== "permanent") {
+        let addedMillis = 0;
+        if (durationUnit === "seconds") addedMillis = durationVal * 1000;
+        else if (durationUnit === "minutes") addedMillis = durationVal * 60 * 1000;
+        else if (durationUnit === "hours") addedMillis = durationVal * 60 * 60 * 1000;
+        else if (durationUnit === "days") addedMillis = durationVal * 24 * 60 * 60 * 1000;
+        else if (durationUnit === "months") addedMillis = durationVal * 30 * 24 * 60 * 60 * 1000;
+
+        expiryTime = (now + addedMillis).toString();
+      }
+
+      dbUsers.child(user).set({
+        password: pass,
+        device_limit: deviceLimit,
+        duration_label: durationUnit === "permanent" ? "Lifetime" : `${durationVal} ${durationUnit}`,
+        expiry_timestamp: expiryTime,
+        created_at: new Date().toLocaleString(),
+        status: "unregistered",
+        device_id: "none",
+        device_name: "none",
+        device_version: "none",
+        build_id: "none"
+      }).then(() => {
+        showToast("License key created successfully!");
+        closeModal('keyGenModal');
+        document.getElementById("modalUsername").value = "";
+        document.getElementById("modalPassword").value = "";
+      }).catch(err => showToast("Error: " + err.message));
+    }
+
+    // 6. Floating Mod Config (Title & Logo)
+    function openFloatingModal() {
+      if (rawFloatingConfig) {
+        document.getElementById("floatTitle").value = rawFloatingConfig.title || "";
+        document.getElementById("floatLogoUrl").value = rawFloatingConfig.logo || "";
+      }
+      openModal('floatingConfigModal');
+    }
+
+    function saveFloatingConfig() {
+      const title = document.getElementById("floatTitle").value.trim();
+      const logo = document.getElementById("floatLogoUrl").value.trim();
+
+      if (!title) return showToast("Please enter Floating Window Title!");
+
+      dbFloatingConfig.set({
+        title: title,
+        logo: logo,
+        updated_at: new Date().toLocaleString()
+      }).then(() => {
+        showToast("Floating config saved and broadcasted!");
+        closeModal('floatingConfigModal');
+      }).catch(err => showToast("Error: " + err.message));
+    }
+
+    // 7. Update, Notification, Branding, Redirect Controllers
+    function openUpdateModal(updateId = null) {
+      if (updateId && rawUpdatesData[updateId]) {
+        const item = rawUpdatesData[updateId];
+        document.getElementById("editUpdateKeyId").value = updateId;
+        document.getElementById("updateTitle").value = item.title || "";
+        document.getElementById("updateVersion").value = item.version || "";
+        document.getElementById("updateMessage").value = item.message || "";
+        document.getElementById("updateDownloadUrl").value = item.download_url || "";
+        document.getElementById("updateForceState").value = item.status || "active";
+        document.getElementById("updateModalHeading").innerHTML = '<i class="fa-solid fa-pen-to-square" style="color:var(--accent);"></i> Edit Update Configuration';
+        document.getElementById("saveUpdateBtn").innerText = "Save Changes";
+      } else {
+        document.getElementById("editUpdateKeyId").value = "";
+        document.getElementById("updateTitle").value = "";
+        document.getElementById("updateVersion").value = "";
+        document.getElementById("updateMessage").value = "";
+        document.getElementById("updateDownloadUrl").value = "";
+        document.getElementById("updateForceState").value = "active";
+        document.getElementById("updateModalHeading").innerHTML = '<i class="fa-solid fa-cloud-arrow-up" style="color:var(--warning);"></i> Forceful Update Config';
+        document.getElementById("saveUpdateBtn").innerText = "Broadcast Update";
+      }
+      openModal('updateConfigModal');
+    }
+
+    function saveUpdateConfig() {
+      const editId = document.getElementById("editUpdateKeyId").value;
+      const title = document.getElementById("updateTitle").value.trim();
+      const version = document.getElementById("updateVersion").value.trim();
+      const message = document.getElementById("updateMessage").value.trim();
+      const download_url = document.getElementById("updateDownloadUrl").value.trim();
+      const status = document.getElementById("updateForceState").value;
+
+      if (!title || !version || !download_url) return showToast("Please fill in Title, Version and Link!");
+
+      const updateId = editId ? editId : ("UP-" + Date.now().toString(36).toUpperCase());
+      dbUpdates.child(updateId).update({
+        title: title,
+        version: version,
+        message: message,
+        download_url: download_url,
+        status: status,
+        updated_at: new Date().toLocaleString()
+      }).then(() => {
+        showToast(editId ? "Update modified!" : "Update broadcasted!");
+        closeModal('updateConfigModal');
+      }).catch(err => showToast("Error: " + err.message));
+    }
+
+    function toggleUpdateFreeze(updateId, currentStatus) {
+      const newStatus = currentStatus === 'frozen' ? 'active' : 'frozen';
+      dbUpdates.child(updateId).update({ status: newStatus }).then(() => {
+        showToast(`Update is now ${newStatus === 'frozen' ? 'Frozen' : 'Active'}!`);
+      });
+    }
+
+    function deleteUpdateRecord(updateId) {
+      showCustomConfirm("Delete Update Record?", "This will remove the update package from cloud.", () => {
+        dbUpdates.child(updateId).remove().then(() => showToast("Update package removed!"));
+      }, true);
+    }
+
+    function openNotifModal(notifId = null) {
+      if (notifId && rawNotifsData[notifId]) {
+        const item = rawNotifsData[notifId];
+        document.getElementById("editNotifKeyId").value = notifId;
+        document.getElementById("notifTitle").value = item.title || "";
+        document.getElementById("notifMessage").value = item.description || "";
+        document.getElementById("notifState").value = item.status || "active";
+        document.getElementById("notifModalHeading").innerHTML = '<i class="fa-solid fa-pen-to-square" style="color:var(--cyan);"></i> Edit Notification';
+        document.getElementById("saveNotifBtn").innerText = "Save Changes";
+      } else {
+        document.getElementById("editNotifKeyId").value = "";
+        document.getElementById("notifTitle").value = "";
+        document.getElementById("notifMessage").value = "";
+        document.getElementById("notifState").value = "active";
+        document.getElementById("notifModalHeading").innerHTML = '<i class="fa-solid fa-bell" style="color:var(--cyan);"></i> Push Notification Config';
+        document.getElementById("saveNotifBtn").innerText = "Send Notification";
+      }
+      openModal('notifConfigModal');
+    }
+
+    function saveNotifConfig() {
+      const editId = document.getElementById("editNotifKeyId").value;
+      const title = document.getElementById("notifTitle").value.trim();
+      const desc = document.getElementById("notifMessage").value.trim();
+      const status = document.getElementById("notifState").value;
+
+      if (!title || !desc) return showToast("Provide Title and Description!");
+
+      const notifId = editId ? editId : ("NOTIF-" + Date.now().toString(36).toUpperCase());
+      dbNotifs.child(notifId).update({
+        title: title,
+        description: desc,
+        status: status,
+        updated_at: new Date().toLocaleString()
+      }).then(() => {
+        showToast(editId ? "Notification modified!" : "Notification broadcasted!");
+        closeModal('notifConfigModal');
+      }).catch(err => showToast("Error: " + err.message));
+    }
+
+    function toggleNotifFreeze(notifId, currentStatus) {
+      const newStatus = currentStatus === 'frozen' ? 'active' : 'frozen';
+      dbNotifs.child(notifId).update({ status: newStatus }).then(() => {
+        showToast(`Notification is now ${newStatus === 'frozen' ? 'Frozen' : 'Active'}!`);
+      });
+    }
+
+    function deleteNotifRecord(notifId) {
+      showCustomConfirm("Delete Notification?", "This notification will be cleared.", () => {
+        dbNotifs.child(notifId).remove().then(() => showToast("Notification removed!"));
+      }, true);
+    }
+
+    function openBrandingModal(brandingId = null) {
+      if (brandingId && rawBrandingData[brandingId]) {
+        const item = rawBrandingData[brandingId];
+        document.getElementById("editBrandingKeyId").value = brandingId;
+        document.getElementById("brandingAppName").value = item.app_name || "";
+        document.getElementById("brandingLogoUrl").value = item.logo_url || "";
+        document.getElementById("brandingState").value = item.status || "active";
+        document.getElementById("brandingModalHeading").innerHTML = '<i class="fa-solid fa-pen-to-square" style="color:var(--pink);"></i> Edit App Branding';
+        document.getElementById("saveBrandingBtn").innerText = "Save Changes";
+      } else {
+        document.getElementById("editBrandingKeyId").value = "";
+        document.getElementById("brandingAppName").value = "";
+        document.getElementById("brandingLogoUrl").value = "";
+        document.getElementById("brandingState").value = "active";
+        document.getElementById("brandingModalHeading").innerHTML = '<i class="fa-solid fa-palette" style="color:var(--pink);"></i> App UI Branding Config';
+        document.getElementById("saveBrandingBtn").innerText = "Apply Branding";
+      }
+      openModal('brandingConfigModal');
+    }
+
+    function saveBrandingConfig() {
+      const editId = document.getElementById("editBrandingKeyId").value;
+      const appName = document.getElementById("brandingAppName").value.trim();
+      const logoUrl = document.getElementById("brandingLogoUrl").value.trim();
+      const status = document.getElementById("brandingState").value;
+
+      if (!appName || !logoUrl) return showToast("Provide App Name and Logo URL!");
+
+      const brandingId = editId ? editId : ("BRAND-" + Date.now().toString(36).toUpperCase());
+      dbBranding.child(brandingId).update({
+        app_name: appName,
+        logo_url: logoUrl,
+        status: status,
+        updated_at: new Date().toLocaleString()
+      }).then(() => {
+        showToast(editId ? "Branding updated!" : "App Branding applied!");
+        closeModal('brandingConfigModal');
+      }).catch(err => showToast("Error: " + err.message));
+    }
+
+    function toggleBrandingFreeze(brandingId, currentStatus) {
+      const newStatus = currentStatus === 'frozen' ? 'active' : 'frozen';
+      dbBranding.child(brandingId).update({ status: newStatus }).then(() => {
+        showToast(`Branding is now ${newStatus === 'frozen' ? 'Frozen' : 'Active'}!`);
+      });
+    }
+
+    function deleteBrandingRecord(brandingId) {
+      showCustomConfirm("Delete Branding?", "This configuration will be deleted.", () => {
+        dbBranding.child(brandingId).remove().then(() => showToast("Branding removed!"));
+      }, true);
+    }
+
+    function openRedirectModal(redirectId = null) {
+      if (redirectId && rawRedirectsData[redirectId]) {
+        const item = rawRedirectsData[redirectId];
+        document.getElementById("editRedirectKeyId").value = redirectId;
+        document.getElementById("redirectTitle").value = item.title || "";
+        document.getElementById("redirectTargetUrl").value = item.target_url || "";
+        document.getElementById("redirectState").value = item.status || "active";
+        document.getElementById("redirectModalHeading").innerHTML = '<i class="fa-solid fa-pen-to-square" style="color:var(--red);"></i> Edit Link Redirect';
+        document.getElementById("saveRedirectBtn").innerText = "Save Changes";
+      } else {
+        document.getElementById("editRedirectKeyId").value = "";
+        document.getElementById("redirectTitle").value = "";
+        document.getElementById("redirectTargetUrl").value = "";
+        document.getElementById("redirectState").value = "active";
+        document.getElementById("redirectModalHeading").innerHTML = '<i class="fa-solid fa-link" style="color:var(--red);"></i> Auto Link Redirect Config';
+        document.getElementById("saveRedirectBtn").innerText = "Save & Activate Link";
+      }
+      openModal('redirectConfigModal');
+    }
+
+    function saveRedirectConfig() {
+      const editId = document.getElementById("editRedirectKeyId").value;
+      const title = document.getElementById("redirectTitle").value.trim();
+      const targetUrl = document.getElementById("redirectTargetUrl").value.trim();
+      const status = document.getElementById("redirectState").value;
+
+      if (!title || !targetUrl) return showToast("Provide Title and Target URL!");
+
+      const redirectId = editId ? editId : ("REDIR-" + Date.now().toString(36).toUpperCase());
+      dbRedirects.child(redirectId).update({
+        title: title,
+        target_url: targetUrl,
+        status: status,
+        updated_at: new Date().toLocaleString()
+      }).then(() => {
+        showToast(editId ? "Redirect link updated!" : "Redirect link saved!");
+        closeModal('redirectConfigModal');
+      }).catch(err => showToast("Error: " + err.message));
+    }
+
+    function toggleRedirectFreeze(redirectId, currentStatus) {
+      const newStatus = currentStatus === 'frozen' ? 'active' : 'frozen';
+      dbRedirects.child(redirectId).update({ status: newStatus }).then(() => {
+        showToast(`Redirect is now ${newStatus === 'frozen' ? 'Frozen / Disabled' : 'Active'}!`);
+      });
+    }
+
+    function deleteRedirectRecord(redirectId) {
+      showCustomConfirm("Delete Redirect Link?", "Auto redirect will stop.", () => {
+        dbRedirects.child(redirectId).remove().then(() => showToast("Redirect record removed!"));
+      }, true);
+    }
+
+    // 8. Function Data Filter Switcher
+    function applyFunctionFilter(type, chipElement) {
+      currentFunctionFilter = type;
+      document.querySelectorAll('#page-updatedata .filter-chip').forEach(c => c.classList.remove('active'));
+      chipElement.classList.add('active');
+      renderFunctionDataCards();
+    }
+
+    // 9. Render Function Data Cards
+    function renderFunctionDataCards() {
+      const container = document.getElementById("updatesGridContainer");
+      container.innerHTML = "";
+
+      const updateKeys = Object.keys(rawUpdatesData);
+      const notifKeys = Object.keys(rawNotifsData);
+      const brandingKeys = Object.keys(rawBrandingData);
+      const redirectKeys = Object.keys(rawRedirectsData);
+      const modButtonKeys = Object.keys(rawFloatingButtons);
+      const hasFloating = rawFloatingConfig && Object.keys(rawFloatingConfig).length > 0;
+
+      document.getElementById("countUpdatesChip").innerText = updateKeys.length;
+      document.getElementById("countNotifsChip").innerText = notifKeys.length;
+      document.getElementById("countBrandingChip").innerText = brandingKeys.length;
+      document.getElementById("countRedirectsChip").innerText = redirectKeys.length;
+      document.getElementById("countFloatingChip").innerText = hasFloating ? 1 : 0;
+      document.getElementById("countModButtonsChip").innerText = modButtonKeys.length;
+      document.getElementById("totalModFeaturesCount").innerText = modButtonKeys.length;
+
+      let renderedItemsCount = 0;
+
+      // Render Mod Buttons Cards (NEW)
+      if (currentFunctionFilter === 'all' || currentFunctionFilter === 'mod_buttons') {
+        modButtonKeys.forEach(id => {
+          renderedItemsCount++;
+          const item = rawFloatingButtons[id];
+          const isDual = item.fileMode === "dual";
+
+          container.innerHTML += `
+            <div class="item-card">
+              <div>
+                <div class="card-header-top">
+                  <div>
+                    <h3 style="font-size: 15px; font-weight:700;"><i class="fa-solid fa-gamepad" style="color:var(--orange);"></i> ${item.name || 'Mod Feature'}</h3>
+                    <div style="margin-top: 4px;">
+                      <span class="cred-tag" style="background: rgba(255, 85, 0, 0.15); color: var(--orange);"><b>${isDual ? 'DUAL ZIP MODE' : 'SINGLE ZIP MODE'}</b></span>
+                      <span class="cred-tag">ID: <b>${id}</b></span>
+                    </div>
+                  </div>
+                  <span class="status-badge status-active">
+                    <i class="fa-solid fa-circle-check"></i> Deployed
+                  </span>
+                </div>
+                <div class="info-details-box">
+                  <div class="info-row">
+                    <span>Primary Target:</span>
+                    <strong style="font-size:11px; font-family:monospace;">${item.extractPath || 'N/A'}</strong>
+                  </div>
+                  <div class="info-row">
+                    <span>Primary ZIP:</span>
+                    <strong><a href="${item.zipUrl}" target="_blank" style="color:var(--accent); text-decoration:none;"><i class="fa-solid fa-download"></i> Download</a></strong>
+                  </div>
+                  ${isDual ? `
+                    <div class="info-row">
+                      <span>Secondary Target:</span>
+                      <strong style="font-size:11px; font-family:monospace;">${item.secExtractPath || 'N/A'}</strong>
+                    </div>
+                  ` : ''}
+                  ${item.deletePaths ? `
+                    <div class="info-row" style="flex-direction: column; align-items: flex-start;">
+                      <span>Delete Paths:</span>
+                      <strong style="font-size:11px; font-family:monospace; color:var(--text-dim); margin-top:3px;">${item.deletePaths}</strong>
+                    </div>
+                  ` : ''}
+                </div>
+              </div>
+              <div class="card-actions">
+                <button class="btn-labeled btn-reset" style="color: var(--orange); border-color: rgba(255, 85, 0, 0.3);" onclick="openModActionModal('${id}')">
+                  <i class="fa-solid fa-pen-to-square"></i> Edit
+                </button>
+                <button class="btn-labeled btn-del" onclick="deleteModActionButton('${id}')">
+                  <i class="fa-solid fa-trash"></i> Delete
+                </button>
+              </div>
+            </div>
+          `;
+        });
+      }
+
+      // Render Floating Config Card
+      if ((currentFunctionFilter === 'all' || currentFunctionFilter === 'floating') && hasFloating) {
+        renderedItemsCount++;
+        container.innerHTML += `
+          <div class="item-card">
+            <div>
+              <div class="card-header-top">
+                <div>
+                  <h3 style="font-size: 15px; font-weight:700;"><i class="fa-solid fa-compass" style="color:var(--orange);"></i> ${rawFloatingConfig.title || 'Floating Mod Menu'}</h3>
+                  <div style="margin-top: 4px;">
+                    <span class="cred-tag" style="background: rgba(255, 85, 0, 0.15); color: var(--orange);"><b>OVERLAY CONFIG</b></span>
+                  </div>
+                </div>
+                <span class="status-badge status-active">
+                  <i class="fa-solid fa-circle-check"></i> Active
+                </span>
+              </div>
+              <div class="info-details-box">
+                <div class="info-row">
+                  <span>Last Modified:</span>
+                  <strong>${rawFloatingConfig.updated_at || 'Recently'}</strong>
+                </div>
+                <div class="info-row">
+                  <span>Header Title (titleTag):</span>
+                  <strong>${rawFloatingConfig.title || 'Default'}</strong>
+                </div>
+                <div class="info-row">
+                  <span>Logo (iconView):</span>
+                  <strong><a href="${rawFloatingConfig.logo || '#'}" target="_blank" style="color:var(--accent); text-decoration:none;"><i class="fa-solid fa-image"></i> View Logo</a></strong>
+                </div>
+              </div>
+            </div>
+            <div class="card-actions">
+              <button class="btn-labeled btn-reset" style="color: var(--orange); border-color: rgba(255, 85, 0, 0.3);" onclick="openFloatingModal()">
+                <i class="fa-solid fa-pen-to-square"></i> Edit
+              </button>
+              <button class="btn-labeled btn-del" onclick="dbFloatingConfig.remove().then(() => showToast('Floating config reset!'))">
+                <i class="fa-solid fa-trash"></i> Reset Defaults
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
+      // Render Redirects
+      if (currentFunctionFilter === 'all' || currentFunctionFilter === 'redirects') {
+        redirectKeys.forEach(id => {
+          renderedItemsCount++;
+          const item = rawRedirectsData[id];
+          const isFrozen = item.status === "frozen";
+
+          container.innerHTML += `
+            <div class="item-card">
+              <div>
+                <div class="card-header-top">
+                  <div>
+                    <h3 style="font-size: 15px; font-weight:700;"><i class="fa-solid fa-link" style="color:var(--red);"></i> ${item.title || 'Auto Redirect'}</h3>
+                    <div style="margin-top: 4px;">
+                      <span class="cred-tag" style="background: rgba(244, 63, 94, 0.15); color: var(--red);"><b>AUTO REDIRECT</b></span>
+                      <span class="cred-tag">ID: <b>${id}</b></span>
+                    </div>
+                  </div>
+                  <span class="status-badge ${isFrozen ? 'status-frozen' : 'status-active'}">
+                    <i class="fa-solid ${isFrozen ? 'fa-snowflake' : 'fa-circle-check'}"></i> ${isFrozen ? 'Frozen' : 'Active'}
+                  </span>
+                </div>
+                <div class="info-details-box">
+                  <div class="info-row">
+                    <span>Applied Date:</span>
+                    <strong>${item.updated_at || 'Recently'}</strong>
+                  </div>
+                  <div class="info-row">
+                    <span>Target URL:</span>
+                    <strong><a href="${item.target_url}" target="_blank" style="color:var(--accent); text-decoration:none;"><i class="fa-solid fa-arrow-up-right-from-square"></i> Open Link</a></strong>
+                  </div>
+                </div>
+              </div>
+              <div class="card-actions">
+                <button class="btn-labeled btn-reset" style="color: var(--red); border-color: rgba(244, 63, 94, 0.3);" onclick="openRedirectModal('${id}')">
+                  <i class="fa-solid fa-pen-to-square"></i> Edit
+                </button>
+                <button class="btn-labeled btn-freeze" onclick="toggleRedirectFreeze('${id}', '${item.status}')">
+                  <i class="fa-solid fa-snowflake"></i> ${isFrozen ? 'Unfreeze' : 'Freeze'}
+                </button>
+                <button class="btn-labeled btn-del" onclick="deleteRedirectRecord('${id}')">
+                  <i class="fa-solid fa-trash"></i> Delete
+                </button>
+              </div>
+            </div>
+          `;
+        });
+      }
+
+      // Render Branding Cards
+      if (currentFunctionFilter === 'all' || currentFunctionFilter === 'branding') {
+        brandingKeys.forEach(id => {
+          renderedItemsCount++;
+          const item = rawBrandingData[id];
+          const isFrozen = item.status === "frozen";
+
+          container.innerHTML += `
+            <div class="item-card">
+              <div>
+                <div class="card-header-top">
+                  <div>
+                    <h3 style="font-size: 15px; font-weight:700;"><i class="fa-solid fa-palette" style="color:var(--pink);"></i> ${item.app_name || 'App UI Customizer'}</h3>
+                    <div style="margin-top: 4px;">
+                      <span class="cred-tag" style="background: rgba(236, 72, 153, 0.15); color: var(--pink);"><b>APP BRANDING</b></span>
+                      <span class="cred-tag">ID: <b>${id}</b></span>
+                    </div>
+                  </div>
+                  <span class="status-badge ${isFrozen ? 'status-frozen' : 'status-active'}">
+                    <i class="fa-solid ${isFrozen ? 'fa-snowflake' : 'fa-circle-check'}"></i> ${isFrozen ? 'Frozen' : 'Active'}
+                  </span>
+                </div>
+                <div class="info-details-box">
+                  <div class="info-row">
+                    <span>Applied Date:</span>
+                    <strong>${item.updated_at || 'Recently'}</strong>
+                  </div>
+                  <div class="info-row">
+                    <span>textview1 (App Name):</span>
+                    <strong>${item.app_name}</strong>
+                  </div>
+                  <div class="info-row">
+                    <span>imageview1 (Logo URL):</span>
+                    <strong><a href="${item.logo_url}" target="_blank" style="color:var(--accent); text-decoration:none;"><i class="fa-solid fa-image"></i> View Logo</a></strong>
+                  </div>
+                </div>
+              </div>
+              <div class="card-actions">
+                <button class="btn-labeled btn-reset" style="color: var(--pink); border-color: rgba(236, 72, 153, 0.3);" onclick="openBrandingModal('${id}')">
+                  <i class="fa-solid fa-pen-to-square"></i> Edit
+                </button>
+                <button class="btn-labeled btn-freeze" onclick="toggleBrandingFreeze('${id}', '${item.status}')">
+                  <i class="fa-solid fa-snowflake"></i> ${isFrozen ? 'Unfreeze' : 'Freeze'}
+                </button>
+                <button class="btn-labeled btn-del" onclick="deleteBrandingRecord('${id}')">
+                  <i class="fa-solid fa-trash"></i> Delete
+                </button>
+              </div>
+            </div>
+          `;
+        });
+      }
+
+      // Render Updates Cards
+      if (currentFunctionFilter === 'all' || currentFunctionFilter === 'updates') {
+        updateKeys.forEach(id => {
+          renderedItemsCount++;
+          const item = rawUpdatesData[id];
+          const isFrozen = item.status === "frozen";
+
+          container.innerHTML += `
+            <div class="item-card">
+              <div>
+                <div class="card-header-top">
+                  <div>
+                    <h3 style="font-size: 15px; font-weight:700;"><i class="fa-solid fa-cloud-arrow-up" style="color:var(--warning);"></i> ${item.title || 'Untitled Update'}</h3>
+                    <div style="margin-top: 4px;">
+                      <span class="cred-tag" style="background: rgba(245, 158, 11, 0.1); color: var(--warning);"><b>APP UPDATE</b></span>
+                      <span class="cred-tag">Version: <b>${item.version || 'v1.0'}</b></span>
+                    </div>
+                  </div>
+                  <span class="status-badge ${isFrozen ? 'status-frozen' : 'status-active'}">
+                    <i class="fa-solid ${isFrozen ? 'fa-snowflake' : 'fa-circle-check'}"></i> ${isFrozen ? 'Frozen' : 'Active'}
+                  </span>
+                </div>
+                <div class="info-details-box">
+                  <div class="info-row">
+                    <span>Last Modified:</span>
+                    <strong>${item.updated_at || 'Recently'}</strong>
+                  </div>
+                  <div class="info-row">
+                    <span>Changelog:</span>
+                    <strong style="font-size:11px; color:var(--text-dim);">${item.message || 'No description'}</strong>
+                  </div>
+                  <div class="info-row">
+                    <span>Download URL:</span>
+                    <strong><a href="${item.download_url}" target="_blank" style="color:var(--accent); text-decoration:none;"><i class="fa-solid fa-arrow-up-right-from-square"></i> Open Link</a></strong>
+                  </div>
+                </div>
+              </div>
+              <div class="card-actions">
+                <button class="btn-labeled btn-reset" onclick="openUpdateModal('${id}')">
+                  <i class="fa-solid fa-pen-to-square"></i> Edit
+                </button>
+                <button class="btn-labeled btn-freeze" onclick="toggleUpdateFreeze('${id}', '${item.status}')">
+                  <i class="fa-solid fa-snowflake"></i> ${isFrozen ? 'Unfreeze' : 'Freeze'}
+                </button>
+                <button class="btn-labeled btn-del" onclick="deleteUpdateRecord('${id}')">
+                  <i class="fa-solid fa-trash"></i> Delete
+                </button>
+              </div>
+            </div>
+          `;
+        });
+      }
+
+      // Render Notifications Cards
+      if (currentFunctionFilter === 'all' || currentFunctionFilter === 'notifications') {
+        notifKeys.forEach(id => {
+          renderedItemsCount++;
+          const item = rawNotifsData[id];
+          const isFrozen = item.status === "frozen";
+
+          container.innerHTML += `
+            <div class="item-card">
+              <div>
+                <div class="card-header-top">
+                  <div>
+                    <h3 style="font-size: 15px; font-weight:700;"><i class="fa-solid fa-bell" style="color:var(--cyan);"></i> ${item.title || 'Untitled Notification'}</h3>
+                    <div style="margin-top: 4px;">
+                      <span class="cred-tag" style="background: rgba(6, 182, 212, 0.1); color: var(--cyan);"><b>NOTIFICATION</b></span>
+                    </div>
+                  </div>
+                  <span class="status-badge ${isFrozen ? 'status-frozen' : 'status-active'}">
+                    <i class="fa-solid ${isFrozen ? 'fa-snowflake' : 'fa-circle-check'}"></i> ${isFrozen ? 'Frozen' : 'Active'}
+                  </span>
+                </div>
+                <div class="info-details-box">
+                  <div class="info-row">
+                    <span>Broadcast Date:</span>
+                    <strong>${item.updated_at || 'Recently'}</strong>
+                  </div>
+                  <div class="info-row" style="flex-direction: column; align-items: flex-start;">
+                    <span>Message:</span>
+                    <strong style="font-size:12px; color:var(--text); margin-top: 4px;">${item.description || 'No description'}</strong>
+                  </div>
+                </div>
+              </div>
+              <div class="card-actions">
+                <button class="btn-labeled btn-reset" style="color: var(--cyan); border-color: rgba(6, 182, 212, 0.3);" onclick="openNotifModal('${id}')">
+                  <i class="fa-solid fa-pen-to-square"></i> Edit
+                </button>
+                <button class="btn-labeled btn-freeze" onclick="toggleNotifFreeze('${id}', '${item.status}')">
+                  <i class="fa-solid fa-snowflake"></i> ${isFrozen ? 'Unfreeze' : 'Freeze'}
+                </button>
+                <button class="btn-labeled btn-del" onclick="deleteNotifRecord('${id}')">
+                  <i class="fa-solid fa-trash"></i> Delete
+                </button>
+              </div>
+            </div>
+          `;
+        });
+      }
+
+      if (renderedItemsCount === 0) {
+        container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-dim); padding: 40px;">No function records found in this category.</div>`;
+      }
+    }
+
+    // 10. Realtime Database Listeners
+    dbUsers.on('value', (snapshot) => {
+      rawUsersData = snapshot.val() || {};
+      updateDashboardCounts();
+      renderKeyCards();
+    });
+
+    dbUpdates.on('value', (snapshot) => {
+      rawUpdatesData = snapshot.val() || {};
+      renderFunctionDataCards();
+    });
+
+    dbNotifs.on('value', (snapshot) => {
+      rawNotifsData = snapshot.val() || {};
+      renderFunctionDataCards();
+    });
+
+    dbBranding.on('value', (snapshot) => {
+      rawBrandingData = snapshot.val() || {};
+      renderFunctionDataCards();
+    });
+
+    dbRedirects.on('value', (snapshot) => {
+      rawRedirectsData = snapshot.val() || {};
+      renderFunctionDataCards();
+    });
+
+    dbFloatingConfig.on('value', (snapshot) => {
+      rawFloatingConfig = snapshot.val() || {};
+      renderFunctionDataCards();
+    });
+
+    dbFloatingButtons.on('value', (snapshot) => {
+      rawFloatingButtons = snapshot.val() || {};
+      renderFunctionDataCards();
+    });
+
+    function updateDashboardCounts() {
+      let total = 0, single = 0, unlimited = 0;
+      Object.keys(rawUsersData).forEach(key => {
+        total++;
+        const item = rawUsersData[key];
+        if (item.device_limit === "unlimited") unlimited++;
+        else single++;
+      });
+      document.getElementById("totalKeys").innerText = total;
+      document.getElementById("totalSingleKeys").innerText = single;
+      document.getElementById("totalUnlimitedKeys").innerText = unlimited;
+    }
+
+    function getCountdownText(expiryTimestamp) {
+      if (!expiryTimestamp || expiryTimestamp === "permanent") return { text: "Permanent (Lifetime)", isExpired: false };
+      const expiry = parseInt(expiryTimestamp);
+      const diff = expiry - Date.now();
+      if (diff <= 0) return { text: "Expired / Finished", isExpired: true };
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      let parts = [];
+      if (days > 0) parts.push(`${days}d`);
+      if (hours > 0 || days > 0) parts.push(`${hours}h`);
+      parts.push(`${minutes}m`);
+      parts.push(`${seconds}s`);
+      return { text: parts.join(' '), isExpired: false };
+    }
+
+    function applyKeyFilter(type, chipElement) {
+      currentKeyFilter = type;
+      document.querySelectorAll('#page-keydata .filter-chip').forEach(c => c.classList.remove('active'));
+      chipElement.classList.add('active');
+      renderKeyCards();
+    }
+
+    function renderKeyCards() {
+      const container = document.getElementById("keysGridContainer");
+      container.innerHTML = "";
+      const keys = Object.keys(rawUsersData);
+
+      if (keys.length === 0) {
+        container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-dim); padding: 40px;">No license keys found.</div>`;
+        return;
+      }
+
+      keys.forEach(key => {
+        const item = rawUsersData[key];
+        const isUnlimited = item.device_limit === 'unlimited';
+
+        if (currentKeyFilter === 'single' && isUnlimited) return;
+        if (currentKeyFilter === 'unlimited' && !isUnlimited) return;
+
+        const isFrozen = item.status === "frozen";
+        const isActive = item.status === "active";
+
+        let badgeClass = "status-pending", badgeText = "Pending", badgeIcon = "fa-clock";
+        if (isFrozen) { badgeClass = "status-frozen"; badgeText = "Frozen"; badgeIcon = "fa-snowflake"; }
+        else if (isActive) { badgeClass = "status-active"; badgeText = "Activated"; badgeIcon = "fa-circle-check"; }
+
+        const cd = getCountdownText(item.expiry_timestamp);
+        const activeDevCount = item.active_devices ? Object.keys(item.active_devices).length : 0;
+
+        container.innerHTML += `
+          <div class="item-card">
+            <div>
+              <div class="card-header-top">
+                <div>
+                  <h3 style="font-size: 15px; font-weight:700;"><i class="fa-solid fa-key" style="color:var(--accent);"></i> ${key}</h3>
+                  <div style="margin-top: 4px;">
+                    <span class="cred-tag" style="background: rgba(59, 130, 246, 0.1); color: var(--accent);"><b>KEY MANAGER</b></span>
+                    <span class="cred-tag">User: <b>${key}</b></span>
+                    <span class="cred-tag">Pass: <b>${item.password || 'N/A'}</b></span>
+                    <span class="cred-tag">${isUnlimited ? 'Unlimited' : '1 Device'}</span>
+                  </div>
+                </div>
+                <span class="status-badge ${badgeClass}">
+                  <i class="fa-solid ${badgeIcon}"></i> ${badgeText}
+                </span>
+              </div>
+              <div class="info-details-box">
+                <div class="info-row">
+                  <span>Generated Date:</span>
+                  <strong>${item.created_at || 'Recently'}</strong>
+                </div>
+                <div class="info-row">
+                  <span>Device Hardware:</span>
+                  <strong>${isUnlimited ? (activeDevCount + ' Device(s) Bound') : (item.device_name && item.device_name !== 'none' ? item.device_name : 'None')}</strong>
+                </div>
+                <div class="info-row">
+                  <span>Build ID:</span>
+                  <strong><small style="font-family:monospace;">${item.build_id && item.build_id !== 'none' ? item.build_id : 'Not Bound'}</small></strong>
+                </div>
+                <div class="info-row">
+                  <span>HWID / Android ID:</span>
+                  <strong><small style="font-family:monospace; color:var(--text-dim);">${item.device_id && item.device_id !== 'none' ? item.device_id : 'N/A'}</small></strong>
+                </div>
+              </div>
+              <div class="countdown-container">
+                <div class="countdown-title"><i class="fa-solid fa-stopwatch"></i> Expiry Countdown</div>
+                <div class="countdown-timer ${cd.isExpired ? 'expired' : ''}" data-expiry="${item.expiry_timestamp}">
+                  ${cd.text}
+                </div>
+              </div>
+            </div>
+            <div class="card-actions">
+              <button class="btn-labeled btn-copy" onclick="copyKey('${key}', '${item.password}')">
+                <i class="fa-solid fa-copy"></i> Copy Key
+              </button>
+              <button class="btn-labeled btn-freeze" onclick="toggleFreeze('${key}', '${item.status}')">
+                <i class="fa-solid fa-snowflake"></i> ${isFrozen ? 'Unfreeze' : 'Freeze'}
+              </button>
+              <button class="btn-labeled btn-reset" onclick="resetHWID('${key}')">
+                <i class="fa-solid fa-arrows-rotate"></i> Reset HWID
+              </button>
+              <button class="btn-labeled btn-del" onclick="deleteKey('${key}')">
+                <i class="fa-solid fa-trash"></i> Delete
+              </button>
+              ${isUnlimited ? `
+                <button class="btn-labeled btn-logs" onclick="viewDeviceLogs('${key}')">
+                  <i class="fa-solid fa-users"></i> View Bound Devices (${activeDevCount})
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    setInterval(() => {
+      document.querySelectorAll('.countdown-timer').forEach(el => {
+        const expiry = el.getAttribute('data-expiry');
+        const cd = getCountdownText(expiry);
+        el.innerText = cd.text;
+        if (cd.isExpired) el.classList.add('expired');
+        else el.classList.remove('expired');
+      });
+    }, 1000);
+
+    function viewDeviceLogs(key) {
+      const item = rawUsersData[key];
+      const tbody = document.getElementById("deviceLogTableBody");
+      tbody.innerHTML = "";
+      document.getElementById("logModalSubtitle").innerText = `Connected hardware logs for: ${key}`;
+
+      if (item && item.active_devices) {
+        Object.keys(item.active_devices).forEach(devKey => {
+          const dev = item.active_devices[devKey];
+          tbody.innerHTML += `
+            <tr>
+              <td><b>${dev.device_name || 'Unknown'}</b></td>
+              <td>${dev.device_version || 'N/A'}</td>
+              <td><small style="font-family:monospace; color:var(--text-dim);">${dev.device_id || devKey}</small></td>
+              <td><small>${dev.build_id || 'N/A'}</small></td>
+            </tr>
+          `;
+        });
+      } else {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text-dim); padding: 20px;">No devices logged in yet.</td></tr>`;
+      }
+      openModal('deviceLogModal');
+    }
+
+    function copyKey(key, pass) {
+      navigator.clipboard.writeText(`User: ${key}\nPass: ${pass}`);
+      showToast("Credentials copied to clipboard!");
+    }
+
+    function toggleFreeze(key, currentStatus) {
+      const nextStatus = currentStatus === "frozen" ? "active" : "frozen";
+      dbUsers.child(key).update({ status: nextStatus }).then(() => {
+        showToast(`Key successfully ${nextStatus === 'frozen' ? 'frozen' : 'unfrozen'}!`);
+      });
+    }
+
+    function resetHWID(key) {
+      showCustomConfirm("Reset Bound HWID?", "Key can be used on a newly authorized device.", () => {
+        dbUsers.child(key).update({
+          device_id: "none",
+          device_name: "none",
+          device_version: "none",
+          build_id: "none",
+          active_devices: null,
+          status: "unregistered"
+        }).then(() => showToast("Device ID binding has been cleared!"));
+      }, false);
+    }
+
+    function deleteKey(key) {
+      showCustomConfirm("Delete License Key?", "Access and logs will be permanently erased.", () => {
+        dbUsers.child(key).remove().then(() => showToast("License deleted successfully!"));
+      }, true);
+    }
+  </script>
+</body>
+</html>
